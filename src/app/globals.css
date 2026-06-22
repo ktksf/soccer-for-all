@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-slate-950 text-chalk antialiased;
+}
+
+/* Faint mowed-pitch stripes used behind hero / dashboard. */
+.pitch-stripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(23, 179, 94, 0.06) 0px,
+    rgba(23, 179, 94, 0.06) 40px,
+    rgba(23, 179, 94, 0.02) 40px,
+    rgba(23, 179, 94, 0.02) 80px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---- Print / export-to-PDF: turn the dark UI into an ink-on-white coaching sheet ---- */
+@media print {
+  /* Hide app chrome (nav, form, saved list, buttons) — only the session prints. */
+  .no-print {
+    display: none !important;
+  }
+
+  /* White paper, dark ink. */
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .pitch-stripes {
+    background-image: none !important;
+  }
+
+  /* Flatten the dashboard's two-column grid so the session fills the page. */
+  main > div {
+    display: block !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Neutralize the dark theme inside the printable session. */
+  #printable-session,
+  #printable-session * {
+    color: #111 !important;
+    background: transparent !important;
+    background-image: none !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+  }
+
+  /* Keep the brand green on headings and accent icons for identity. */
+  #printable-session h1,
+  #printable-session h2,
+  #printable-session h3,
+  #printable-session svg {
+    color: #0c904b !important;
+  }
+
+  /* Don't split a drill card or section across a page break. */
+  #printable-session article,
+  #printable-session section,
+  #printable-session hr + div {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Give cards a light outline so the structure survives on paper. */
+  #printable-session article {
+    border: 1px solid #d1d5db !important;
+    padding: 12px !important;
+  }
+
+  @page {
+    margin: 1.4cm;
+  }
+}

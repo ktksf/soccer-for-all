@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ActivityBlock, Drill } from "@/types/session";
 import { ClockIcon, TargetIcon, ListIcon, WhistleIcon, SwapIcon } from "./icons";
+import DrillDiagram from "./DrillDiagram";
 
 interface Props {
   /** Accepts a full Drill or a lighter ActivityBlock (no coaching points). */
@@ -74,6 +75,15 @@ export default function DrillCard({
         <TargetIcon className={`mt-0.5 h-4 w-4 shrink-0 ${accentText}`} />
         <p>{drill.objective}</p>
       </div>
+
+      {drill.diagram && (
+        <div className="mt-4">
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-pitch-200/60">
+            Setup
+          </p>
+          <DrillDiagram data={drill.diagram} />
+        </div>
+      )}
 
       <div className="mt-4">
         <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-pitch-200/60">

@@ -98,6 +98,7 @@ export default function DashboardPage() {
         durationMinutes: drill.durationMinutes,
         objective: drill.objective,
         instructions: drill.instructions,
+        diagram: drill.diagram,
       };
       next = { ...session, [slot.block]: activity };
     }

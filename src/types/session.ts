@@ -31,6 +31,28 @@ export interface SessionFormData {
   goal: TrainingGoal;
 }
 
+/** A piece placed on the drill diagram grid (coordinates are 0–100). */
+export interface DiagramElement {
+  type: "cone" | "player" | "defender" | "ball" | "goal";
+  x: number;
+  y: number;
+  /** Short label, e.g. "1" or "GK". */
+  label?: string;
+}
+
+/** A directional line on the diagram. */
+export interface DiagramArrow {
+  kind: "pass" | "run" | "dribble";
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
+/** A schematic setup drawn on a 100×100 pitch grid. */
+export interface DrillDiagram {
+  elements: DiagramElement[];
+  arrows: DiagramArrow[];
+}
+
 /** A single drill block returned by the AI. */
 export interface Drill {
   name: string;
@@ -38,6 +60,7 @@ export interface Drill {
   objective: string;
   instructions: string[];
   coachingPoints: string[];
+  diagram?: DrillDiagram;
 }
 
 /** A focused single-block activity (game / cool down). */
@@ -46,6 +69,7 @@ export interface ActivityBlock {
   durationMinutes: number;
   objective: string;
   instructions: string[];
+  diagram?: DrillDiagram;
 }
 
 /** The structured JSON contract the AI must return. */

@@ -2,6 +2,21 @@ import type { DrillBlockType, SessionFormData } from "@/types/session";
 import { COACHING_KNOWLEDGE } from "@/lib/coachingKnowledge";
 
 /**
+ * Shared description of the "diagram" field so the AI draws a usable schematic
+ * setup for each drill. Rendered to SVG client-side by the DrillDiagram component.
+ */
+const DIAGRAM_RULES = `DIAGRAM RULES (the "diagram" field):
+A Diagram shows the setup on a 100x100 grid where x: 0=left, 100=right and y: 0=top, 100=bottom. Shape:
+{
+  "elements": [ { "type": "cone" | "player" | "defender" | "ball" | "goal", "x": number, "y": number, "label": string } ],
+  "arrows":   [ { "kind": "pass" | "run" | "dribble", "from": { "x": number, "y": number }, "to": { "x": number, "y": number } } ]
+}
+- Keep all coordinates between 5 and 95. Place players, defenders, cones, the ball and goals where the instructions imply.
+- Use 4-12 elements and 1-6 arrows. "label" is optional and short (e.g. "1", "GK"); omit it for cones and the ball.
+- arrow kinds: "pass" = the ball is played; "run" = a player moves without the ball; "dribble" = a player moves with the ball.
+- Only use elements consistent with the available equipment (e.g. no "goal" if they have no goals).`;
+
+/**
  * The coaching "persona" prompt. This is where the [SOCCER COACH PROMPT]
  * lives — edit the voice and philosophy here to tune every session.
  *
@@ -40,7 +55,8 @@ Respond with ONLY a single valid JSON object and nothing else — no markdown, n
       "durationMinutes": number,
       "objective": string,
       "instructions": string[],           // step-by-step, plain language
-      "coachingPoints": string[]          // what to look for / cue
+      "coachingPoints": string[],         // what to look for / cue
+      "diagram": Diagram                  // see DIAGRAM RULES below
     }
   ],
   "technicalDrills": [                     // 2-3 items, the core of the session
@@ -49,14 +65,16 @@ Respond with ONLY a single valid JSON object and nothing else — no markdown, n
       "durationMinutes": number,
       "objective": string,
       "instructions": string[],
-      "coachingPoints": string[]
+      "coachingPoints": string[],
+      "diagram": Diagram
     }
   ],
   "gameActivity": {                        // a game-like application phase
     "name": string,
     "durationMinutes": number,
     "objective": string,
-    "instructions": string[]
+    "instructions": string[],
+    "diagram": Diagram
   },
   "conditioning": {                        // age-appropriate fitness element
     "name": string,
@@ -72,6 +90,8 @@ Respond with ONLY a single valid JSON object and nothing else — no markdown, n
   },
   "coachNotes": string                     // 2-4 sentences of extra guidance, progressions, and what success looks like
 }
+
+${DIAGRAM_RULES}
 
 Ensure all durations are integers and that they sum to the requested total. Return JSON only.`;
 
@@ -106,10 +126,13 @@ Respond with ONLY a single valid JSON object — no markdown, no code fences, no
       "durationMinutes": number,        // must equal the current drill's duration
       "objective": string,
       "instructions": string[],         // step-by-step, plain language
-      "coachingPoints": string[]        // what to look for / cue
+      "coachingPoints": string[],       // what to look for / cue
+      "diagram": Diagram                // see DIAGRAM RULES below
     }
   ]
 }
+
+${DIAGRAM_RULES}
 
 Return exactly 3 alternatives. JSON only.`;
 

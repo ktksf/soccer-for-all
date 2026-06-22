@@ -68,3 +68,19 @@ export interface SavedSession {
   input: SessionFormData;
   session: GeneratedSession;
 }
+
+/** The named blocks of a session that hold drills/activities. */
+export type DrillBlockType =
+  | "warmup"
+  | "technicalDrills"
+  | "gameActivity"
+  | "conditioning"
+  | "coolDown";
+
+/** Points at one specific drill within a session, used when swapping it out. */
+export type DrillSlot =
+  | { block: "warmup"; index: number }
+  | { block: "technicalDrills"; index: number }
+  | { block: "gameActivity" }
+  | { block: "conditioning" }
+  | { block: "coolDown" };

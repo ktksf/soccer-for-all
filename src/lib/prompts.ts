@@ -1,4 +1,4 @@
-import type { SessionFormData } from "@/types/session";
+import type { DrillBlockType, SessionFormData } from "@/types/session";
 import { COACHING_KNOWLEDGE } from "@/lib/coachingKnowledge";
 
 /**
@@ -74,6 +74,81 @@ Respond with ONLY a single valid JSON object and nothing else — no markdown, n
 }
 
 Ensure all durations are integers and that they sum to the requested total. Return JSON only.`;
+
+/** Human-readable label for each session block. */
+const BLOCK_LABELS: Record<DrillBlockType, string> = {
+  warmup: "warm-up",
+  technicalDrills: "technical drills",
+  gameActivity: "game activity",
+  conditioning: "conditioning",
+  coolDown: "cool down",
+};
+
+/** System prompt for generating alternative options for a single drill. */
+export const ALTERNATIVES_SYSTEM_PROMPT = `You are the same elite, UEFA-licensed youth coach for "Soccer for All". A coach likes their session but wants ALTERNATIVE options for ONE specific drill, keeping the rest of the session unchanged.
+
+Ground every alternative in this coaching knowledge base, exactly as you would when building a full session:
+${COACHING_KNOWLEDGE}
+
+Rules for the alternatives:
+- Each must serve the SAME purpose and fit the SAME part of the session as the drill being replaced.
+- Keep the SAME duration in minutes as the current drill, so the overall session still fits its time budget.
+- Respect the player's age, skill level, position, and number of players, and use ONLY the equipment available.
+- Make each alternative clearly different from the current drill and from each other.
+
+CRITICAL OUTPUT FORMAT:
+Respond with ONLY a single valid JSON object — no markdown, no code fences, no commentary:
+
+{
+  "alternatives": [
+    {
+      "name": string,
+      "durationMinutes": number,        // must equal the current drill's duration
+      "objective": string,
+      "instructions": string[],         // step-by-step, plain language
+      "coachingPoints": string[]        // what to look for / cue
+    }
+  ]
+}
+
+Return exactly 3 alternatives. JSON only.`;
+
+export interface AlternativesRequest {
+  input: SessionFormData;
+  blockType: DrillBlockType;
+  sessionTitle: string;
+  current: { name: string; durationMinutes: number; objective: string };
+  existingNames: string[];
+}
+
+/** Builds the user message asking for alternatives to one drill. */
+export function buildAlternativesPrompt(req: AlternativesRequest): string {
+  const { input, blockType, sessionTitle, current, existingNames } = req;
+  return [
+    `Session: "${sessionTitle}".`,
+    `The drill below sits in the "${BLOCK_LABELS[blockType]}" part of the session.`,
+    "",
+    "Player & session parameters:",
+    `- Age: ${input.age}`,
+    `- Skill level: ${input.skillLevel}`,
+    `- Position: ${input.position}`,
+    `- Number of players: ${input.numberOfPlayers}`,
+    `- Equipment available: ${input.equipment || "ball only"}`,
+    `- Primary training goal: ${input.goal}`,
+    "",
+    "Drill to replace:",
+    `- Name: ${current.name}`,
+    `- Duration: ${current.durationMinutes} minutes (keep all alternatives at this exact duration)`,
+    `- Objective: ${current.objective}`,
+    "",
+    existingNames.length
+      ? `Do not duplicate any of these drills already in the session: ${existingNames.join(", ")}.`
+      : "",
+    "Provide exactly 3 alternatives. Return JSON only.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 
 /** Builds the per-request user message from the form data. */
 export function buildUserPrompt(data: SessionFormData): string {

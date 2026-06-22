@@ -1,12 +1,20 @@
 "use client";
 
-import type { GeneratedSession, SessionFormData } from "@/types/session";
+import { useState } from "react";
+import type {
+  ActivityBlock,
+  Drill,
+  DrillSlot,
+  GeneratedSession,
+  SessionFormData,
+} from "@/types/session";
 import DrillCard from "./DrillCard";
 import {
   ClockIcon,
   FlameIcon,
   PrinterIcon,
   SnowflakeIcon,
+  SwapIcon,
   WhistleIcon,
 } from "./icons";
 
@@ -16,6 +24,8 @@ interface Props {
   input?: SessionFormData;
   onSave?: () => void;
   saved?: boolean;
+  /** Replace one drill in the session with a chosen alternative (enables Edit mode). */
+  onReplaceDrill?: (slot: DrillSlot, drill: Drill) => void;
 }
 
 function SectionHeading({
@@ -33,9 +43,68 @@ function SectionHeading({
   );
 }
 
-export default function SessionDisplay({ session, input, onSave, saved }: Props) {
+export default function SessionDisplay({
+  session,
+  input,
+  onSave,
+  saved,
+  onReplaceDrill,
+}: Props) {
+  const [editing, setEditing] = useState(false);
+
+  // Editing needs the session parameters (to ask for fitting alternatives)
+  // and a handler to apply the swap.
+  const canEdit = !!input && !!onReplaceDrill;
+
   function handlePrint() {
     window.print();
+  }
+
+  function allDrillNames(): string[] {
+    return [
+      ...session.warmup.map((d) => d.name),
+      ...session.technicalDrills.map((d) => d.name),
+      session.gameActivity.name,
+      session.conditioning.name,
+      session.coolDown.name,
+    ];
+  }
+
+  async function getAlternatives(
+    slot: DrillSlot,
+    current: Drill | ActivityBlock
+  ): Promise<Drill[]> {
+    if (!input) return [];
+    const res = await fetch("/api/alternatives", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input,
+        blockType: slot.block,
+        sessionTitle: session.sessionTitle,
+        current: {
+          name: current.name,
+          durationMinutes: current.durationMinutes,
+          objective: current.objective,
+        },
+        existingNames: allDrillNames(),
+      }),
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      throw new Error(payload.error || "Couldn't load alternatives.");
+    }
+    return payload.alternatives as Drill[];
+  }
+
+  /** Props that turn a DrillCard into an editable, swappable card. */
+  function editProps(slot: DrillSlot, drill: Drill | ActivityBlock) {
+    if (!editing || !canEdit) return {};
+    return {
+      editable: true,
+      onFindAlternatives: () => getAlternatives(slot, drill),
+      onReplace: (chosen: Drill) => onReplaceDrill!(slot, chosen),
+    };
   }
 
   return (
@@ -98,7 +167,26 @@ export default function SessionDisplay({ session, input, onSave, saved }: Props)
             <PrinterIcon className="h-4 w-4" />
             Print / PDF
           </button>
+          {canEdit && (
+            <button
+              onClick={() => setEditing((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-pitch-400 ${
+                editing
+                  ? "border-pitch-500/60 bg-pitch-500/20 text-pitch-100"
+                  : "border-slate-750 bg-slate-950/40 text-chalk hover:border-pitch-700/50 hover:bg-slate-950/70"
+              }`}
+            >
+              <SwapIcon className="h-4 w-4" />
+              {editing ? "Done editing" : "Edit plan"}
+            </button>
+          )}
         </div>
+
+        {editing && (
+          <p className="no-print mt-3 text-xs text-pitch-200/70">
+            Edit mode on — tap <span className="font-semibold text-pitch-200">Find alternatives</span> on any drill to swap it for another option.
+          </p>
+        )}
       </div>
 
       {/* Warm-up */}
@@ -106,7 +194,11 @@ export default function SessionDisplay({ session, input, onSave, saved }: Props)
         <SectionHeading icon={<FlameIcon className="h-5 w-5" />}>Warm-up</SectionHeading>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {session.warmup.map((d, i) => (
-            <DrillCard key={i} drill={d} />
+            <DrillCard
+              key={i}
+              drill={d}
+              {...editProps({ block: "warmup", index: i }, d)}
+            />
           ))}
         </div>
       </section>
@@ -118,7 +210,11 @@ export default function SessionDisplay({ session, input, onSave, saved }: Props)
         </SectionHeading>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {session.technicalDrills.map((d, i) => (
-            <DrillCard key={i} drill={d} />
+            <DrillCard
+              key={i}
+              drill={d}
+              {...editProps({ block: "technicalDrills", index: i }, d)}
+            />
           ))}
         </div>
       </section>
@@ -126,19 +222,28 @@ export default function SessionDisplay({ session, input, onSave, saved }: Props)
       {/* Game activity */}
       <section className="space-y-3">
         <SectionHeading>Game activity</SectionHeading>
-        <DrillCard drill={session.gameActivity} />
+        <DrillCard
+          drill={session.gameActivity}
+          {...editProps({ block: "gameActivity" }, session.gameActivity)}
+        />
       </section>
 
       {/* Conditioning */}
       <section className="space-y-3">
         <SectionHeading icon={<FlameIcon className="h-5 w-5" />}>Conditioning</SectionHeading>
-        <DrillCard drill={session.conditioning} />
+        <DrillCard
+          drill={session.conditioning}
+          {...editProps({ block: "conditioning" }, session.conditioning)}
+        />
       </section>
 
       {/* Cool down */}
       <section className="space-y-3">
         <SectionHeading icon={<SnowflakeIcon className="h-5 w-5" />}>Cool down</SectionHeading>
-        <DrillCard drill={session.coolDown} />
+        <DrillCard
+          drill={session.coolDown}
+          {...editProps({ block: "coolDown" }, session.coolDown)}
+        />
       </section>
 
       {/* Coach notes */}

@@ -35,6 +35,15 @@ export function saveSession(
   return record;
 }
 
+/** Update the session content of an already-saved record (e.g. after editing a drill). */
+export function updateSession(id: string, session: GeneratedSession): SavedSession[] {
+  const all = getSavedSessions().map((s) =>
+    s.id === id ? { ...s, session } : s
+  );
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  return all;
+}
+
 /** Remove a saved session by id and return the remaining list. */
 export function deleteSession(id: string): SavedSession[] {
   const remaining = getSavedSessions().filter((s) => s.id !== id);

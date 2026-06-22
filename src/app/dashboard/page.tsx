@@ -8,6 +8,9 @@ import SavedSessionsList from "@/components/SavedSessionsList";
 import LoadingState from "@/components/LoadingState";
 import { BallIcon } from "@/components/icons";
 import type {
+  ActivityBlock,
+  Drill,
+  DrillSlot,
   GeneratedSession,
   SavedSession,
   SessionFormData,
@@ -16,6 +19,7 @@ import {
   deleteSession,
   getSavedSessions,
   saveSession,
+  updateSession,
 } from "@/lib/storage";
 
 export default function DashboardPage() {
@@ -79,6 +83,33 @@ export default function DashboardPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleReplaceDrill(slot: DrillSlot, drill: Drill) {
+    if (!session) return;
+
+    let next: GeneratedSession;
+    if (slot.block === "warmup" || slot.block === "technicalDrills") {
+      const arr = [...session[slot.block]];
+      arr[slot.index] = drill;
+      next = { ...session, [slot.block]: arr };
+    } else {
+      // Activity blocks don't carry coaching points — keep only their fields.
+      const activity: ActivityBlock = {
+        name: drill.name,
+        durationMinutes: drill.durationMinutes,
+        objective: drill.objective,
+        instructions: drill.instructions,
+      };
+      next = { ...session, [slot.block]: activity };
+    }
+
+    setSession(next);
+    // If this session is saved, persist the edit too.
+    if (activeId) {
+      updateSession(activeId, next);
+      setSavedList(getSavedSessions());
+    }
+  }
+
   function handleDelete(id: string) {
     const remaining = deleteSession(id);
     setSavedList(remaining);
@@ -131,6 +162,7 @@ export default function DashboardPage() {
               input={lastInput ?? undefined}
               onSave={handleSave}
               saved={saved}
+              onReplaceDrill={handleReplaceDrill}
             />
           )}
 

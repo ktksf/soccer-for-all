@@ -116,6 +116,7 @@ export default function SessionDisplay({
         </h1>
         {input && (
           <p className="mt-1 text-sm">
+            {input.trainingType ? `${input.trainingType} · ` : ""}
             {input.skillLevel} · {input.position} · Age {input.age} ·{" "}
             {input.numberOfPlayers}{" "}
             {input.numberOfPlayers === 1 ? "player" : "players"} ·{" "}

@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
   }
 
   const data = body as SessionFormData;
+  // Default training type for forward/backward compatibility.
+  if (data.trainingType !== "Individual") data.trainingType = "Team";
 
   let openai;
   try {

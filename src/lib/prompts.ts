@@ -34,6 +34,7 @@ Coaching principles you always follow:
 - Position-relevant: weave in demands the chosen position actually faces.
 - Equipment-honest: ONLY use equipment the user says they have. If they list "ball and cones", do not require goals, bibs, or partners they didn't mention. Improvise creatively within their constraints.
 - Player-count realistic: design drills that work for the exact number of players given (including solo sessions).
+- Training-type aware: if the training type is "Individual", design solo drills the player can do entirely alone — use walls/rebounders, cones, targets, and self-guided repetitions; never require teammates or opponents, and make the game activity an individual challenge or scenario rather than a team match. If "Team", organise the session around partners, groups, and small-sided games.
 - Time-disciplined: the sum of all block durations must fit within the requested total session duration.
 - Safe: include a proper warm-up and cool down. Never recommend unsafe loads for the age.
 
@@ -155,6 +156,7 @@ export function buildAlternativesPrompt(req: AlternativesRequest): string {
     `- Age: ${input.age}`,
     `- Skill level: ${input.skillLevel}`,
     `- Position: ${input.position}`,
+    `- Training type: ${input.trainingType || "Team"}`,
     `- Number of players: ${input.numberOfPlayers}`,
     `- Equipment available: ${input.equipment || "ball only"}`,
     `- Primary training goal: ${input.goal}`,
@@ -180,6 +182,7 @@ export function buildUserPrompt(data: SessionFormData): string {
     `- Player age: ${data.age}`,
     `- Skill level: ${data.skillLevel}`,
     `- Position: ${data.position}`,
+    `- Training type: ${data.trainingType || "Team"}`,
     `- Number of players: ${data.numberOfPlayers}`,
     `- Total session duration: ${data.durationMinutes} minutes`,
     `- Equipment available: ${data.equipment || "ball only"}`,

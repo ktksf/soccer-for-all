@@ -2,6 +2,8 @@
 
 export type SkillLevel = "Beginner" | "Intermediate" | "Advanced";
 
+export type TrainingType = "Team" | "Individual";
+
 export type Position =
   | "Goalkeeper"
   | "Defender"
@@ -25,6 +27,7 @@ export interface SessionFormData {
   age: number;
   skillLevel: SkillLevel;
   position: Position;
+  trainingType: TrainingType;
   numberOfPlayers: number;
   durationMinutes: number;
   equipment: string;

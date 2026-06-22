@@ -6,6 +6,7 @@ import type {
   SessionFormData,
   SkillLevel,
   TrainingGoal,
+  TrainingType,
 } from "@/types/session";
 import { BallIcon } from "./icons";
 
@@ -33,7 +34,8 @@ const DEFAULTS: SessionFormData = {
   age: 12,
   skillLevel: "Intermediate",
   position: "Midfielder",
-  numberOfPlayers: 1,
+  trainingType: "Team",
+  numberOfPlayers: 8,
   durationMinutes: 60,
   equipment: "Ball, cones",
   goal: "Dribbling",
@@ -57,6 +59,18 @@ export default function SessionForm({ onSubmit, loading }: Props) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function setTrainingType(type: TrainingType) {
+    setForm((f) => ({
+      ...f,
+      trainingType: type,
+      // Individual = one player; restore a sensible group size when switching to Team.
+      numberOfPlayers:
+        type === "Individual" ? 1 : f.numberOfPlayers <= 1 ? 8 : f.numberOfPlayers,
+    }));
+  }
+
+  const isIndividual = form.trainingType === "Individual";
+
   function handleSubmit() {
     // Client-side guard so users get instant feedback on empty/invalid fields.
     if (!form.age || form.age < 4) return setError("Enter a valid age.");
@@ -78,7 +92,36 @@ export default function SessionForm({ onSubmit, loading }: Props) {
         Tell us about the player and what you have. The AI coach does the rest.
       </p>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      {/* Team vs Individual toggle */}
+      <div className="mt-5">
+        <span className={labelClass}>Training type</span>
+        <div className="grid grid-cols-2 gap-2">
+          {(["Team", "Individual"] as TrainingType[]).map((type) => {
+            const active = form.trainingType === type;
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTrainingType(type)}
+                className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-pitch-500/30 ${
+                  active
+                    ? "border-pitch-500 bg-pitch-500/15 text-pitch-100"
+                    : "border-slate-750 bg-slate-950 text-pitch-200/70 hover:border-pitch-700/60"
+                }`}
+              >
+                {type}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-xs text-pitch-200/60">
+          {isIndividual
+            ? "Solo drills the player can do alone — walls, targets, cones, self-guided reps."
+            : "Group session with partners and small-sided games."}
+        </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="age">Age</label>
           <input
@@ -129,8 +172,12 @@ export default function SessionForm({ onSubmit, loading }: Props) {
             max={30}
             value={form.numberOfPlayers}
             onChange={(e) => update("numberOfPlayers", Number(e.target.value))}
-            className={fieldClass}
+            disabled={isIndividual}
+            className={`${fieldClass} disabled:cursor-not-allowed disabled:opacity-50`}
           />
+          {isIndividual && (
+            <p className="mt-1 text-xs text-pitch-200/50">Individual session — 1 player.</p>
+          )}
         </div>
 
         <div>
